@@ -1,7 +1,8 @@
-package com.sharkxkd.ticket.entity;
+package com.sharkxkd.ticket.common;
 
 import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -28,5 +29,6 @@ public class BaseEntityDO {
      * 删除标志
      */
     @TableField(fill = FieldFill.INSERT)
-    private Boolean delFlag;
+    @TableLogic
+    private Integer delFlag;
 }

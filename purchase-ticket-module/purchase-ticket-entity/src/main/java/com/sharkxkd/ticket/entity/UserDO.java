@@ -1,6 +1,7 @@
 package com.sharkxkd.ticket.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.sharkxkd.ticket.common.BaseEntityDO;
 import lombok.Data;
 
 /**
