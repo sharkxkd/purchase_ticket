@@ -1,4 +1,4 @@
-package com.sharkxkd.ticket.enums;
+package com.sharkxkd.ticket.enums.errorEnum;
 
 /**
  * 返回信息抽象枚举类

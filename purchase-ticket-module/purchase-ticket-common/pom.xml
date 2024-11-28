@@ -19,9 +19,8 @@
     </properties>
     <dependencies>
         <dependency>
-            <groupId>com.sharkxkd.ticket</groupId>
-            <artifactId>purchase-ticket-entity</artifactId>
-            <version>${project.parent.version}</version>
+            <groupId>org.aspectj</groupId>
+            <artifactId>aspectjtools</artifactId>
         </dependency>
     </dependencies>
 </project>

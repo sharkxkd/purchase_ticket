@@ -1,19 +1,34 @@
 package com.sharkxkd.ticket.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.sharkxkd.ticket.constant.RedisConstants;
+import com.sharkxkd.ticket.dao.UserMailMapper;
 import com.sharkxkd.ticket.dao.UserMapper;
+import com.sharkxkd.ticket.dao.UserPhoneMapper;
 import com.sharkxkd.ticket.designPattern.validator.ValidatorChainHandler;
+import com.sharkxkd.ticket.dto.UserLoginDTO;
 import com.sharkxkd.ticket.dto.UserRegisterDTO;
-import com.sharkxkd.ticket.entity.RedisBloomFilter;
-import com.sharkxkd.ticket.entity.UserDO;
+import com.sharkxkd.ticket.entity.*;
 import com.sharkxkd.ticket.enums.ValidatorEnum;
+import com.sharkxkd.ticket.exception.ServiceException;
 import com.sharkxkd.ticket.service.UserService;
+import com.sharkxkd.ticket.util.JWTUtils;
+import com.sharkxkd.ticket.util.BeanUtil;
+import com.sharkxkd.ticket.util.PasswordUtils;
+import com.sharkxkd.ticket.util.RedisLock;
+import com.sharkxkd.ticket.vo.UserLoginVO;
 import com.sharkxkd.ticket.vo.UserRegisterVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+
+import java.security.NoSuchAlgorithmException;
+
+import static com.sharkxkd.ticket.enums.errorEnum.UserStatusEnum.*;
 
 /**
  * 用户业务层具体实现
@@ -29,6 +44,8 @@ public class UserServiceImpl implements UserService {
     private final RedisBloomFilter redisBloomFilter;
     private final ValidatorChainHandler<UserRegisterDTO> validatorChainHandler;
     private final StringRedisTemplate stringRedisTemplate;
+    private final UserPhoneMapper userPhoneMapper;
+    private final UserMailMapper userMailMapper;
 
     /**
      * 检测用户名是否被占用的实现类
@@ -49,12 +66,12 @@ public class UserServiceImpl implements UserService {
             //对数据库进行一次查询，判断是否真的存在
             log.info("该用户名已存在，对应用户名为：{}",username);
             //TODO:对username字段增加索引
-            QueryWrapper<UserDO> queryWrapper = new QueryWrapper<>();
+            QueryWrapper<UserDO> queryWrapper = new QueryWrapper<UserDO>();
             queryWrapper.eq("username",username);
             UserDO userDO = userMapper.selectOne(queryWrapper);
             return userDO == null;
         }
-        //若没有，则一定是不存在，所以直接对bitmap进行更新
+        //若没有，则一定是不存在，所以直接返回可以使用
         return true;
     }
 
@@ -69,7 +86,100 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserRegisterVO register(UserRegisterDTO userRegisterDTO) {
         validatorChainHandler.validate(ValidatorEnum.USERINFO_VALIDATOR,userRegisterDTO);
+        RedisLock lock = new RedisLock(stringRedisTemplate,userRegisterDTO.getUsername());
+        boolean enable = lock.tryLock(2L);
+        if(!enable){
+            //抛出用户名被占用的异常
+            throw new ServiceException(USERNAME_DUPLICATED);
+        }
+        try{
+            //分开捕获异常，重定义为业务异常交给全局处理,用户名为索引，手机号邮箱为索引
+            UserDO userDO = BeanUtil.convert(userRegisterDTO, UserDO.class);
+            userDO.setSalt(PasswordUtils.generateSalt());
+            try{
+                userDO.setPassword(PasswordUtils.encryptPassword(userDO.getPassword(),userDO.getSalt()));
+            }catch (NoSuchAlgorithmException e){
+                log.error("加密密码出现错误",e);
+                throw new ServiceException("加密密码出现错误，加密算法不存在");
+            }
+            try{
+                userMapper.insert(userDO);
+            }catch (DuplicateKeyException e){
+                log.error("用户名索引不唯一{}",userRegisterDTO.getUsername());
+                throw new ServiceException(USERNAME_DUPLICATED);
+            }
+            try{
+                userPhoneMapper.insert(BeanUtil.convert(userRegisterDTO, PhoneDO.class));
+            }catch (DuplicateKeyException e){
+                log.error("电话索引不唯一{}",userRegisterDTO.getPhone());
+                throw new ServiceException(TELEPHONE_DUPLICATED);
+            }
+            try{
+                userMailMapper.insert(BeanUtil.convert(userRegisterDTO, MailDO.class));
+            }catch (DuplicateKeyException e){
+                log.error("邮箱索引不唯一{}",userRegisterDTO.getMail());
+                throw new ServiceException(MAIL_DUPLICATED);
+            }
+            //更新布隆过滤器
+            redisBloomFilter.put(RedisConstants.USERNAME_BLOOM_KEY, userRegisterDTO.getUsername());
+        }finally {
+            lock.unLock();
+        }
+        return BeanUtil.convert(userRegisterDTO, UserRegisterVO.class);
+    }
 
-        return null;
+    /**
+     * 通过不同的格式判断选择的是用户名登录还是手机号登录还是对应的邮箱登录
+     * 1.判断是否是邮箱格式，去对应的邮箱表寻找对应的用户
+     * 2.判断是否是手机号格式，去对应的收集表寻找对应的用户
+     * 3.根据上述查询出来的用户名，去寻找对应的密码进行校验对比
+     * 4.若没有找到对应的用户名就直接使用该信息即可
+     * @param userLoginDTO  用户登录信息类
+     * @return
+     */
+    @Override
+    public UserLoginVO login(UserLoginDTO userLoginDTO) {
+        String loginInfo = userLoginDTO.getUsernameOrMailOrPhone();
+        String username = null;
+        if(loginInfo.contains("@")){
+            LambdaQueryWrapper<MailDO> mailDoQueryWrapper = Wrappers.lambdaQuery(MailDO.class);
+            mailDoQueryWrapper.eq(MailDO::getMail,loginInfo);
+            MailDO mailDO = userMailMapper.selectOne(mailDoQueryWrapper);
+            if(mailDO == null){
+                throw new ServiceException(USER_NOT_FOUND);
+            }
+            username = mailDO.getUsername();
+        }else{
+            //查询是否为手机号
+            LambdaQueryWrapper<PhoneDO> phoneDoQueryWrapper = Wrappers.lambdaQuery(PhoneDO.class);
+            phoneDoQueryWrapper.eq(PhoneDO::getPhone,loginInfo);
+            PhoneDO phoneDO = userPhoneMapper.selectOne(phoneDoQueryWrapper);
+            if(phoneDO != null){
+                username = phoneDO.getUsername();
+            }
+        }
+        if(username == null){
+            username = loginInfo;
+        }
+        LambdaQueryWrapper<UserDO> userDoQueryWrapper = Wrappers.lambdaQuery(UserDO.class);
+        userDoQueryWrapper.eq(UserDO::getUsername,username);
+        UserDO userDO = userMapper.selectOne(userDoQueryWrapper);
+        if(userDO == null){
+            throw new ServiceException(USER_NOT_FOUND);
+        }
+        try{
+            boolean isMatch = PasswordUtils.verifyPassword(userLoginDTO.getPassword(),userDO.getSalt(),userDO.getPassword());
+            if(!isMatch){
+                throw new ServiceException(PASSWORD_ERROR);
+            }
+        }catch (NoSuchAlgorithmException e){
+            log.error("解密密码出现错误",e);
+            throw new ServiceException("解密密码出现错误，加密算法不存在");
+        }
+        //token创建
+        TokenMsg tokenMsg = BeanUtil.convert(userDO, TokenMsg.class);
+        UserLoginVO userLoginVO = BeanUtil.convert(userDO,UserLoginVO.class);
+        userLoginVO.setToken(JWTUtils.createToken(tokenMsg));
+        return userLoginVO;
     }
 }

@@ -1,8 +1,8 @@
-package com.sharkxkd.ticket.designPattern.validator.userInfoValidator;
+package com.sharkxkd.ticket.validators.userInfoValidator;
 
+import com.sharkxkd.ticket.designPattern.validator.AbstractValidator;
 import com.sharkxkd.ticket.dto.UserRegisterDTO;
 import com.sharkxkd.ticket.enums.ValidatorEnum;
-import com.sharkxkd.ticket.designPattern.validator.AbstractValidator;
 
 /**
  * 用户信息校验接口

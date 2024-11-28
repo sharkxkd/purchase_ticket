@@ -1,5 +1,7 @@
 package com.sharkxkd.ticket.enums;
 
+import com.baomidou.mybatisplus.annotation.EnumValue;
+
 /**
  * 身份认证类型枚举类
  *
@@ -40,6 +42,7 @@ public enum IdTypeEnum {
      * 台湾居民来往内地通行证
      */
     TW_PASS_CARD(7,"台湾居民来往内地通行证");
+    @EnumValue
     private Integer code;
     private String desc;
     IdTypeEnum(Integer code,String desc){

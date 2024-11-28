@@ -3,6 +3,7 @@ package com.sharkxkd.ticket.designPattern.validator;
 import com.sharkxkd.ticket.ApplicationContextHolder;
 import com.sharkxkd.ticket.enums.ValidatorEnum;
 import jakarta.annotation.PostConstruct;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;

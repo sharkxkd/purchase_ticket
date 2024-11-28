@@ -1,4 +1,4 @@
-package com.sharkxkd.ticket.designPattern.validator.userInfoValidator;
+package com.sharkxkd.ticket.validators.userInfoValidator;
 
 import com.sharkxkd.ticket.dto.UserRegisterDTO;
 import org.springframework.stereotype.Component;

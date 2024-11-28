@@ -1,6 +1,8 @@
 package com.sharkxkd.ticket.service;
 
+import com.sharkxkd.ticket.dto.UserLoginDTO;
 import com.sharkxkd.ticket.dto.UserRegisterDTO;
+import com.sharkxkd.ticket.vo.UserLoginVO;
 import com.sharkxkd.ticket.vo.UserRegisterVO;
 
 /**
@@ -23,4 +25,11 @@ public interface UserService {
      * @return                  信息展示类
      */
     UserRegisterVO register(UserRegisterDTO userRegisterDTO);
+
+    /**
+     * 用户登录业务层
+     * @param userLoginDTO  用户登录信息类
+     * @return
+     */
+    UserLoginVO login(UserLoginDTO userLoginDTO);
 }

@@ -2,6 +2,8 @@ package com.sharkxkd.ticket.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.sharkxkd.ticket.common.BaseEntityDO;
+import com.sharkxkd.ticket.enums.IdTypeEnum;
+import com.sharkxkd.ticket.enums.UserTypeEnums;
 import lombok.Data;
 
 /**
@@ -40,7 +42,7 @@ public class UserDO extends BaseEntityDO {
     /**
      * 身份类型
      */
-    private String idType;
+    private IdTypeEnum idType;
     /**
      * 身份证号
      */
@@ -60,7 +62,7 @@ public class UserDO extends BaseEntityDO {
     /**
      * 用户类型
      */
-    private String userType;
+    private UserTypeEnums userType;
     /**
      * 验证状态
      */

@@ -1,5 +1,6 @@
-package com.sharkxkd.ticket.enums;
+package com.sharkxkd.ticket.enums.errorEnum;
 
+import com.sharkxkd.ticket.enums.errorEnum.AbstractResultStatusEnum;
 import lombok.Getter;
 
 /**
@@ -9,7 +10,7 @@ import lombok.Getter;
  * @date 2024/11/19 20:18
  **/
 @Getter
-public enum UserStatusEnum implements AbstractResultStatusEnum{
+public enum UserStatusEnum implements AbstractResultStatusEnum {
     /**
      * 注册失败
      */
@@ -34,6 +35,14 @@ public enum UserStatusEnum implements AbstractResultStatusEnum{
      * token解析过程中出现异常
      */
     TOKEN_PARSE_ERROR(20006,"token解析过程中出现异常"),
+    /**
+     * 手机号被绑定异常
+     */
+    TELEPHONE_DUPLICATED(20007,"手机号已被绑定"),
+    /**
+     * 邮箱被绑定异常
+     */
+    MAIL_DUPLICATED(20008,"邮箱已经被注册过"),
     ;
 
     private final Integer code;

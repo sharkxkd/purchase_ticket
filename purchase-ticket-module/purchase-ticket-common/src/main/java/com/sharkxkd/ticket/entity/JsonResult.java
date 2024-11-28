@@ -1,6 +1,7 @@
-package com.sharkxkd.ticket.common;
+package com.sharkxkd.ticket.entity;
 
-import com.sharkxkd.ticket.enums.AbstractResultStatusEnum;
+import com.sharkxkd.ticket.enums.errorEnum.AbstractResultStatusEnum;
+import com.sharkxkd.ticket.exception.AbstractException;
 import lombok.Data;
 
 /**
@@ -42,11 +43,11 @@ public class JsonResult<T> {
 
     /**
      * 使用错误代码返回
-     * @param statusEnum 错误枚举类
+     * @param abstractException 错误的异常类
      * @return  响应对象
      */
-    public static <T> JsonResult<T> error(AbstractResultStatusEnum statusEnum){
-        return JsonResult.error(statusEnum.getCode(), statusEnum.getMessage());
+    public static <T> JsonResult<T> error(AbstractException abstractException){
+        return JsonResult.error(abstractException.getCode(), abstractException.getMessage());
     }
 
     /**
@@ -60,6 +61,19 @@ public class JsonResult<T> {
         JsonResult<T> result = new JsonResult<>();
         result.setCode(code);
         result.setMessage(message);
+        return result;
+    }
+
+    /**
+     *
+     * @param abstractResultStatusEnum
+     * @return
+     * @param <T>
+     */
+    public static <T> JsonResult<T> error(AbstractResultStatusEnum abstractResultStatusEnum) {
+        JsonResult<T> result = new JsonResult<>();
+        result.setCode(abstractResultStatusEnum.getCode());
+        result.setMessage(abstractResultStatusEnum.getMessage());
         return result;
     }
 }

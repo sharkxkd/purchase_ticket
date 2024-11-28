@@ -1,12 +1,14 @@
 package com.sharkxkd.ticket.controller;
 
-import com.sharkxkd.ticket.common.JsonResult;
+import com.sharkxkd.ticket.dto.UserLoginDTO;
+import com.sharkxkd.ticket.entity.JsonResult;
 import com.sharkxkd.ticket.dto.UserRegisterDTO;
 import com.sharkxkd.ticket.service.UserService;
+import com.sharkxkd.ticket.vo.UserLoginVO;
 import com.sharkxkd.ticket.vo.UserRegisterVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -29,7 +31,11 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public JsonResult<UserRegisterVO> register(@RequestBody UserRegisterDTO userRegisterDTO){
+    public JsonResult<UserRegisterVO> register(@RequestBody @Validated UserRegisterDTO userRegisterDTO){
         return JsonResult.success(userService.register(userRegisterDTO));
+    }
+    @PostMapping("/login")
+    public JsonResult<UserLoginVO> login(@RequestBody @Validated UserLoginDTO userLoginDTO){
+        return JsonResult.success(userService.login(userLoginDTO));
     }
 }

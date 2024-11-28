@@ -1,6 +1,6 @@
 package com.sharkxkd.ticket.vo;
 
-import com.sharkxkd.ticket.enums.IdTypeEnum;
+import lombok.Data;
 
 /**
  * 用户注册信息展现类vo
@@ -8,7 +8,7 @@ import com.sharkxkd.ticket.enums.IdTypeEnum;
  * @author zc
  * @date 2024/11/20 20:19
  **/
-
+@Data
 public class UserRegisterVO {
     private String username;
     private String realName;

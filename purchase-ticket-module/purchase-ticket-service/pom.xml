@@ -28,5 +28,10 @@
             <artifactId>purchase-ticket-dao</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.sharkxkd.ticket</groupId>
+            <artifactId>purchase-ticket-dto</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
     </dependencies>
 </project>
